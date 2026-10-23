@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {authClient} from '@/lib/browser';
+import {authErrorMessage} from '@/lib/auth/errors';
 import {isEmail} from '@/lib/teams';
 import {ArrowUpRight,Network,ShieldCheck} from 'lucide-react';
 
@@ -15,7 +16,7 @@ export default function Login(){
    const {error}=await authClient.signIn.email({email:email.trim(),password});
    if(error){
     if(error.code==='EMAIL_NOT_VERIFIED'){openVerification();return;}
-    throw new Error(error.status===503?'Configure o Neon Auth na Vercel. Consulte o README.':'Não foi possível entrar. Confira e-mail e senha. Se falta verificar a conta, use “Confirmar e-mail com código”.');
+    throw new Error(authErrorMessage(error,error.status===503?'Configure o Neon Auth na Vercel. Consulte o README.':'Não foi possível entrar. Confira e-mail e senha. Se falta verificar a conta, use “Confirmar e-mail com código”.'));
    }
    window.location.assign('/');
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível entrar. Tente novamente.');}finally{setBusy(false);}
@@ -24,7 +25,7 @@ export default function Login(){
   e.preventDefault();setBusy(true);setError('');setNotice('');
   try{
    const {error}=await authClient.emailOtp.verifyEmail({email:email.trim(),otp:code.trim()});
-   if(error)throw new Error(error.status===429?'Muitas tentativas. Aguarde antes de tentar novamente.':'Não foi possível confirmar. Confira o código e o e-mail ou solicite um novo código.');
+   if(error)throw new Error(authErrorMessage(error,'Não foi possível confirmar. Confira o código e o e-mail ou solicite um novo código.'));
    setCode('');setPassword('');setStep('login');setNotice('E-mail confirmado! Entre com sua senha para continuar.');
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível verificar o e-mail.');}finally{setBusy(false);}
  }
@@ -33,7 +34,7 @@ export default function Login(){
   setBusy(true);setError('');setNotice('');
   try{
    const {error}=await authClient.emailOtp.sendVerificationOtp({email:email.trim(),type:'email-verification'});
-   if(error)throw new Error(error.status===429?'Aguarde antes de solicitar outro código.':'Não foi possível solicitar o código. Confira o e-mail e tente novamente.');
+   if(error)throw new Error(authErrorMessage(error,'Não foi possível solicitar o código. Confira o e-mail e tente novamente.'));
    setCooldown(60);setCode('');setNotice('Se a conta precisar de confirmação, um novo código será enviado. Confira também a caixa de spam.');
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível reenviar o código.');}finally{setBusy(false);}
  }
