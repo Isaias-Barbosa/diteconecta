@@ -1,75 +1,34 @@
-# DITEC Conecta
+# DITEC Conecta — Vercel + Neon
 
-Diretório de equipes em **Next.js + TypeScript + Supabase**, preparado para hospedagem na **Vercel**.
+Diretório corporativo em **Next.js + TypeScript**, com **PostgreSQL e Neon Auth no Neon**. Não precisa de Supabase nem de servidor no Render.
 
-## O que já está pronto
+## Funcionalidades
 
-- Diretório com busca por nome, área e e-mail; filtros por unidade e contatos habilitados.
-- 112 pessoas importadas do PDF “Gestores atualizado 13 1 (1).pdf”, atualizado em 03/06/2026.
-- 25 agrupamentos: 22 áreas, superintendências, diretoria e secretaria executiva.
-- Os 23 nomes em vermelho ficam visíveis e bloqueados para mensagens, inclusive se tiverem e-mail.
-- Administração com tabela de todas as pessoas, edição e limpeza de e-mail, validação e salvamento por linha.
-- Modal para escrever a mensagem, copiar o texto e abrir o chat privado no Teams.
-- Login por e-mail/senha no Supabase; acesso somente para membros cadastrados; edição somente para administradores.
-- RLS no banco e validação no servidor. Nem mesmo o admin pode alterar nomes, funções ou bloqueios por esta interface.
-- Layout adaptável a celular e desktop, navegação por teclado e modal nativo com foco contido.
+- 112 pessoas do PDF atualizado em 03/06/2026, em 25 agrupamentos.
+- 23 nomes em vermelho visíveis somente para consulta, sem preparação de mensagens.
+- Busca por nome, área e e-mail; filtros por área e contatos habilitados.
+- Página `/admin` com todos os contatos para cadastrar, corrigir ou apagar o e-mail/UPN do Teams.
+- Modal para digitar, copiar o texto e abrir a conversa privada no Teams.
+- Login por e-mail/senha com Neon Auth; permissões `admin` e `reader` no banco.
+- Bloqueios e permissões verificados no servidor. Nenhum cadastro público ou promoção de função pela interface.
 
-## Como funciona o Teams
+## 1. Criar o banco e habilitar o Neon Auth
 
-O servidor consulta o contato cadastrado e monta um link oficial:
+1. Crie um projeto no https://console.neon.tech.
+2. Escolha sua branch de produção, normalmente `main`.
+3. Em **Connect**, copie a connection string PostgreSQL. Use a opção pooled (`-pooler`) para `DATABASE_URL`, mantendo `sslmode=require`.
+4. Na mesma branch, abra **Auth / Better Auth** e habilite o serviço gerenciado. Copie a **Auth URL** em Configuration / Project Info para `NEON_AUTH_BASE_URL`.
+5. Habilite o login por e-mail e senha. Configure a verificação de e-mail conforme sua política e confirme as contas quando exigido.
+6. Cadastre `http://localhost:3000` nos domínios/origens confiáveis para desenvolvimento. Depois cadastre a URL HTTPS exata da Vercel. Use os campos de domínio confiável do painel; não libere curingas amplos.
+7. No **SQL Editor**, execute nesta ordem:
+   - `neon/001_schema.sql`
+   - `neon/002_seed.sql`
 
-`https://teams.microsoft.com/l/chat/0/0?users=EMAIL&message=TEXTO`
+Os scripts são para uma instalação nova no Neon. O schema do Neon Auth é gerenciado pelo próprio Neon e não deve ser criado manualmente. A tabela `app_members` usa o ID de usuário do Neon Auth como texto, sem dependência de `auth.users` ou `auth.uid()` do Supabase.
 
-O campo **E-mail do Teams** deve conter o **UserPrincipalName (UPN)**: o endereço usado para entrar na conta corporativa. Ele pode ser diferente do e-mail da caixa postal. Use apenas um destinatário por pessoa.
+## 2. Configurar localmente
 
-O link direciona o Teams ao chat privado da conta informada. É necessário estar conectado à organização correta. O usuário confirma o envio no Teams; o site não envia mensagens, não lê conversas e não solicita permissões do Microsoft Graph.
-
-O preenchimento do rascunho depende do cliente Teams e do estado da conversa. O botão **Copiar texto** funciona como alternativa se o aplicativo abrir a conversa sem preservar o texto. O site não sabe se a mensagem foi enviada ou lida e não apresenta status de entrega.
-
-O texto é transportado na URL para o Teams. Nenhuma mensagem é persistida pelo aplicativo. A abertura só acontece quando a pessoa clica no botão; nenhuma mensagem foi enviada durante o desenvolvimento.
-
-Referência oficial: https://learn.microsoft.com/pt-br/microsoftteams/platform/concepts/build-and-test/deep-link-workflow
-
-## 1. Preparar o Supabase
-
-1. Crie um projeto no Supabase.
-2. No **SQL Editor**, execute primeiro `supabase/001_schema.sql` e depois `supabase/002_seed.sql`.
-3. Em **Authentication → Providers → Email**, mantenha o login por e-mail habilitado. Em **Authentication → Settings**, desative a criação pública de novas contas (Allow new users to sign up). A interface não contém cadastro.
-4. Em **Authentication → Users → Add user**, crie seu usuário por e-mail e senha. Use uma conta confirmada ou conclua a confirmação por e-mail antes de entrar.
-5. Execute o SQL abaixo, trocando o e-mail pelo da conta que você acabou de criar:
-
-```sql
-insert into public.app_members(user_id, role)
-select id, 'admin'
-from auth.users
-where lower(email) = lower('seu.email@empresa.com.br')
-on conflict (user_id) do update set role = excluded.role;
-```
-
-Confirme que existe uma linha para sua conta:
-
-```sql
-select m.user_id, u.email, m.role
-from public.app_members m
-join auth.users u on u.id = m.user_id;
-```
-
-Para liberar outro usuário somente para consultar e abrir conversas, crie a conta em Authentication e cadastre-a como `reader`:
-
-```sql
-insert into public.app_members(user_id, role)
-select id, 'reader' from auth.users
-where lower(email) = lower('outro.usuario@empresa.com.br')
-on conflict (user_id) do update set role = excluded.role;
-```
-
-Criar uma conta no Auth não libera o diretório sem esta associação. As funções do aplicativo são atribuídas somente pelo proprietário do banco; usuários não podem se promover a administradores.
-
-**As contas de login no site são diferentes dos contatos do diretório.** Você não precisa criar 112 contas no Supabase Auth. Os contatos do PDF ficam apenas na tabela `people`.
-
-## 2. Executar localmente
-
-Requer Node.js 22 ou superior e npm.
+Requer Node.js 22+ e npm.
 
 ```bash
 npm ci
@@ -78,47 +37,119 @@ npm ci
 Copie `.env.example` para `.env.local` e preencha:
 
 ```dotenv
-NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
+DATABASE_URL=postgresql://USUARIO:SENHA@ep-ENDPOINT-pooler.REGIAO.aws.neon.tech/neondb?sslmode=require
+NEON_AUTH_BASE_URL=https://ep-ENDPOINT.neonauth.REGIAO.aws.neon.tech/neondb/auth
+NEON_AUTH_COOKIE_SECRET=SEU_SEGREDO_ALEATORIO_DE_32_OU_MAIS_CARACTERES
+APP_URL=http://localhost:3000
 DEMO_MODE=false
 ```
 
-A URL está no painel do projeto Supabase. A chave é a **publishable key**, em Settings → API Keys. Projetos que usam a chave pública legada `anon` também podem colocá-la neste campo. **Nunca use `service_role`, secret key ou senha do banco em uma variável NEXT_PUBLIC.**
+Gere o segredo de cookies localmente:
+
+```bash
+node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64'))"
+```
+
+**Todas essas configurações são do servidor. Não use prefixo `NEXT_PUBLIC_` para connection string, senha ou segredo. Não envie `.env.local` ao GitHub.**
+
+## 3. Criar o primeiro administrador
+
+Com o banco preparado e `.env.local` preenchido, execute:
+
+```bash
+npm run user:create
+```
+
+O script solicita e-mail, nome, permissão (`admin` ou `reader`) e senha sem exibi-la. Ele cria a conta no Neon Auth e associa seu ID à tabela `app_members`. Execute apenas na sua máquina. O endereço em `APP_URL` deve estar nas origens confiáveis do Neon Auth. O provedor de e-mail/senha deve permitir o provisionamento da conta.
+
+Se a conta já existir no Neon Auth, não execute o cadastro novamente. Libere ou altere a permissão no SQL Editor, usando o ID da conta em Auth → Users:
+
+```sql
+insert into public.app_members(user_id,role)
+values ('ID_DO_USUARIO_NO_NEON_AUTH','admin')
+on conflict(user_id) do update set role=excluded.role;
+```
+
+Use `reader` para consulta e preparação de conversas sem editar contatos. Criar uma conta de autenticação não concede acesso automaticamente: a associação em `app_members` é obrigatória. Em caso de falha após criar a conta, use o mesmo SQL para concluir a liberação.
+
+Não existem 112 contas de login: as pessoas do PDF são contatos na tabela `people`. Crie contas de acesso somente para quem vai usar o site.
 
 ```bash
 npm run dev
 ```
 
-Abra http://localhost:3000/login. Após entrar, acesse **Administração** e preencha os e-mails. Clique em **Salvar** em cada linha antes de sair da página.
+Abra http://localhost:3000/login, entre e acesse **Administração**. Preencha o e-mail/UPN de cada pessoa e clique em **Salvar** na respectiva linha. Contatos em vermelho permanecem bloqueados mesmo com e-mail.
 
-## 3. Publicar na Vercel
+## 4. Atualizar a Vercel
 
-1. Crie um repositório GitHub privado e envie o conteúdo desta pasta, sem `node_modules`, `.next` ou `.env.local`.
-2. Na Vercel, importe esse repositório. Framework: **Next.js**. Se esta pasta estiver dentro de outro repositório, selecione-a como Root Directory.
-3. Cadastre `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente dos ambientes em que usar o sistema.
-4. Não habilite `DEMO_MODE` na Vercel. O código também recusa o modo demo em produção.
-5. Faça o deploy. Variáveis NEXT_PUBLIC são inseridas no build: após alterá-las, faça novo deploy.
-6. Entre pela URL da Vercel com o usuário criado no Supabase.
+1. Importe o repositório `Isaias-Barbosa/DITEC_Conecta`, ou use o projeto da Vercel já vinculado a ele.
+2. Framework: **Next.js**; raiz: a raiz do repositório.
+3. Em Settings → Environment Variables, configure:
 
-Não é necessário cadastrar um aplicativo no Entra ID para este método. O login desta versão é do próprio site via Supabase, não é login Microsoft. A conta Microsoft já conectada ao Teams será usada ao abrir o link.
+| Variável | Valor |
+| --- | --- |
+| `DATABASE_URL` | Connection string do Neon, com senha e SSL |
+| `NEON_AUTH_BASE_URL` | Auth URL da mesma branch do banco |
+| `NEON_AUTH_COOKIE_SECRET` | Segredo aleatório com pelo menos 32 caracteres |
+| `APP_URL` | URL HTTPS do site na Vercel; usada também por provisionamento local |
 
-O código foi preparado para Vercel; este pacote não cria projetos ou banco em contas externas automaticamente. A conexão real depende das duas variáveis e da execução dos scripts SQL.
+4. Remova as antigas `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. A aplicação não usa mais essas variáveis.
+5. Mantenha `DEMO_MODE` ausente ou `false`.
+6. Cadastre a URL da Vercel nas origens confiáveis do Neon Auth.
+7. Faça novo deploy. Se usar previews, configure banco/Auth e domínio confiável próprios para o ambiente; não copie automaticamente dados de produção para testes.
 
-## 4. Validar antes do uso
+A aplicação utiliza as funções do próprio Next.js na Vercel. A consulta ao banco usa o driver HTTP do Neon; não há processo permanente a hospedar no Render. O Neon pode suspender compute ocioso e reativá-lo na próxima consulta, com possível demora no primeiro acesso.
 
-1. Entre com o admin e confirme os 112 contatos e os 23 bloqueios.
-2. Cadastre o UPN de uma pessoa com a qual possa testar e salve.
-3. Abra a mesma pessoa no diretório, digite uma mensagem e clique em **Abrir no Teams**.
-4. Confira o destinatário e o rascunho. Se preferir, feche sem enviar.
-5. Confira que nomes em vermelho não abrem o modal mesmo com e-mail cadastrado.
-6. Confira que contatos sem e-mail também não abrem o modal.
-7. Entre com um `reader` e verifique que ele pode consultar, mas não editar e-mails.
+## Segurança e permissões
 
-O acesso real ao Teams e as políticas da organização precisam ser verificados no seu ambiente. O projeto não contorna restrições de contatos externos ou de acesso corporativo.
+- Login e sessão usam o SDK oficial do Neon Auth e cookies gerenciados pelo servidor.
+- A aplicação expõe somente os endpoints de login, sessão e logout do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
+- Cada chamada de dados verifica a sessão e consulta `app_members`. Revogar a associação corta o acesso aos dados, mesmo com uma sessão ainda válida.
+- O servidor permite alteração somente do campo `email`, com uma consulta parametrizada que também verifica a função `admin` no banco.
+- `reader` não pode editar e-mails. Campos de nome, função e bloqueio não são recebidos como alterações.
+- A connection string fica apenas no servidor. Não habilite acesso público às tabelas via Data API. As consultas usam a conta de banco da `DATABASE_URL`; a autorização desta arquitetura acontece nas rotas e nas condições SQL, não nas antigas políticas RLS do Supabase.
+- As tabelas têm permissões públicas revogadas pelo schema. A conexão do servidor deve usar a conta proprietária que executou os scripts, ou uma conta com permissões equivalentes explicitamente configuradas.
+- Erros técnicos do banco não são devolvidos aos clientes.
+- Para revogar acesso, execute `delete from public.app_members where user_id='ID';` no SQL Editor.
+
+## Contatos e Teams
+
+Use como e-mail o **UserPrincipalName (UPN)** usado para entrar no Teams. Ele pode ser diferente do e-mail da caixa postal.
+
+O botão usa o formato oficial:
+
+`https://teams.microsoft.com/l/chat/0/0?users=EMAIL&message=TEXTO`
+
+O Teams direciona ao privado do destinatário informado. Você precisa estar conectado à organização correta e confirmar o envio lá. O texto do rascunho depende do cliente Teams e do estado da conversa; use **Copiar texto** se o aplicativo não o preservar. O site não envia mensagens, não lê chats, não solicita Graph e não confirma entrega.
+
+## Se já cadastrou e-mails no Supabase
+
+A troca de código não transfere dados de uma conta externa automaticamente. O seed inicia com e-mails vazios. Caso tenha dados no banco antigo, exporte os contatos **antes** de encerrar o Supabase.
+
+Para preservar os e-mails, exporte `id,email` da tabela `people` antiga em CSV. No Neon, crie uma tabela temporária de importação e importe o CSV usando uma ferramenta PostgreSQL que suporte importação. Depois execute:
+
+```sql
+begin;
+update public.people p
+set email=nullif(lower(trim(i.email)),'')
+from public.people_email_import i
+where p.id=i.id;
+commit;
+```
+
+A tabela de importação deve ter `id uuid` e `email text`. O update aplica o formato e a unicidade já definidos no banco; resolva erros de duplicidade antes de repetir. Não sobrescreva os campos `blocked`, nome ou função. Reexecutar `002_seed.sql` preserva os e-mails cadastrados no Neon.
+
+Para criar a tabela de importação antes de carregar o CSV:
+
+```sql
+create table public.people_email_import(id uuid, email text);
+```
+
+As senhas e sessões do Supabase não são transferidas pelo projeto. Recrie no Neon Auth as contas que vão usar o sistema e configure suas permissões em `app_members`.
 
 ## Demonstração local sem banco
 
-Para experimentar a interface antes de criar o Supabase, execute em desenvolvimento:
+No bash:
 
 ```bash
 DEMO_MODE=true npm run dev
@@ -131,39 +162,29 @@ $env:DEMO_MODE="true"
 npm run dev
 ```
 
-Abra http://localhost:3000. Um aviso identifica a demonstração. Ela exibe os dados importados e permite salvar e-mails temporários em memória, perdidos ao reiniciar ou recarregar o servidor. Não usa senha nem banco. Use dados de teste. A demonstração é desabilitada em `next build`/`next start`, mesmo com a variável habilitada.
+Abra http://localhost:3000. Um aviso identifica a demonstração. Os e-mails ficam apenas em memória e desaparecem ao reiniciar o servidor. O modo demo não vale em produção, mesmo se a variável estiver habilitada.
 
-## Segurança e manutenção
-
-- Nenhuma chave administrativa do Supabase é necessária.
-- APIs verificam o token do usuário com Supabase Auth e sua associação a `app_members`.
-- O banco aplica RLS; somente admins podem atualizar a coluna `email`. Campos de bloqueio, nome e função não têm permissão de escrita para clientes.
-- Reexecutar o seed atualiza os dados organizacionais sem apagar e-mails já cadastrados.
-- A importação usa IDs estáveis derivados dos nomes. Se uma futura lista mudar a grafia de alguém, revise a correspondência antes de importar para não duplicar o cadastro.
-- A cor vermelha foi convertida em `blocked=true`. Não existe cálculo de permissão a partir de CSS.
-- Superintendentes em azul e a secretaria executiva permanecem contactáveis após cadastrar o e-mail; os nomes em vermelho, incluindo o diretor, ficam bloqueados.
-- A tabela de contatos não representa contas de acesso ao site.
-- Revogue acesso removendo a linha de `app_members` correspondente.
-
-## Verificações do projeto
+## Verificação
 
 ```bash
 npm test
 npm run typecheck
 npm run build
+npm run test:smoke
 ```
 
-Os testes cobrem preservação de acentos e parâmetros na URL, destinatário único, mensagens inválidas, bloqueio com e-mail preenchido, contagem de contatos e consistência da área de adquirência.
+A conexão real ao banco, o provisionamento de contas e a conversa no Teams devem ser conferidos depois de configurar sua conta Neon. Não foram usados dados de acesso à sua conta durante a migração do código.
 
 ## Estrutura
 
-- `app/page.tsx`: diretório.
-- `app/admin/page.tsx`: tabela administrativa.
-- `app/login/page.tsx`: login.
-- `app/api/people/route.ts`: consulta e atualização de e-mails.
-- `app/api/teams/route.ts`: validação de contato e geração do link.
-- `components/Directory.tsx`: interface e modal.
-- `lib/`: Supabase, autorização, tipos e validação dos links.
-- `data/people.json`: extração do documento, sem e-mails inventados.
-- `supabase/`: schema, políticas e carga inicial.
-- `tests/`: testes automatizados.
+- `app/`: páginas e APIs Next.js.
+- `components/Directory.tsx`: diretório, tabela e modal.
+- `lib/auth/server.ts`: SDK Neon Auth no servidor.
+- `lib/server.ts`: sessão, acesso ao banco e autorização.
+- `lib/browser.ts`: cliente de autenticação e chamadas da interface.
+- `neon/001_schema.sql`: tabelas.
+- `neon/002_seed.sql`: 112 contatos; preserva e-mails em reexecuções.
+- `scripts/create-user.mjs`: provisionamento local de contas.
+- `tests/`: validações de links e controles de acesso.
+
+Documentação oficial: https://neon.com/docs/auth/quick-start/nextjs-api-only e https://neon.com/docs/serverless/serverless-driver
