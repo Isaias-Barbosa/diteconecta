@@ -1,5 +1,9 @@
 type AuthError={code?:string;message?:string;status?:number};
 const messages:Record<string,string>={
+ INVALID_TOKEN:'O link de recuperação é inválido ou expirou. Solicite um novo link.',
+ TOKEN_EXPIRED:'O link de recuperação expirou. Solicite um novo link.',
+ PASSWORD_TOO_SHORT:'A senha deve ter pelo menos 8 caracteres.',
+ PASSWORD_TOO_LONG:'A senha deve ter no máximo 128 caracteres.',
  INVALID_ORIGIN:'O domínio do site não está autorizado no Neon Auth. Confira Auth → Configuration → Domains.',
  EMAIL_NOT_VERIFIED:'Este e-mail ainda não foi confirmado.',
  OTP_EXPIRED:'O código expirou. Solicite um novo e use o código mais recente.',

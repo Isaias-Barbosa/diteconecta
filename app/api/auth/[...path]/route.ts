@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getAuth } from '@/lib/auth/server';
 import {isAllowedAuthRoute} from '@/lib/auth/routes';
 import {isEmail} from '@/lib/teams';
+import {validResetRequest,validResetSubmission} from '@/lib/auth/password-reset';
 import {AccessError,fail,sameOrigin} from '@/lib/server';
 
 type Context={params:Promise<{path:string[]}>};
@@ -12,6 +13,11 @@ async function handle(request:NextRequest,context:Context){try{
  const allowed=isAllowedAuthRoute(request.method,endpoint);
  if(!allowed)throw new AccessError('Operação de autenticação não disponível.',404);
  if(request.method==='POST')sameOrigin(request);
+ if(endpoint==='request-password-reset'||endpoint==='reset-password'){
+  let body;try{body=await request.clone().json();}catch{throw new AccessError('Dados inválidos.',400);}
+  const valid=endpoint==='request-password-reset'?validResetRequest(body,new URL(request.url).origin):validResetSubmission(body);
+  if(!valid)throw new AccessError('Informe os dados válidos para recuperar a senha usando o link deste site.',400);
+ }
  if(endpoint.startsWith('email-otp/')){
   let body;try{body=await request.clone().json();}catch{throw new AccessError('Dados inválidos.',400);}
   if(!body || typeof body.email!=='string' || !isEmail(body.email))throw new AccessError('Informe um e-mail válido.',400);

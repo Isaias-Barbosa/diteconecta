@@ -86,6 +86,14 @@ Na página `/login`, clique em **Confirmar e-mail com código**, informe o e-mai
 
 Configure o Neon Auth para verificação por **código**, com provedor de e-mail habilitado. A confirmação não cria nova conta e não altera a permissão em `app_members`. Não é necessário recriar o administrador.
 
+### Recuperar a senha de uma conta existente
+
+Na página `/login`, clique em **Esqueci minha senha**. Informe o e-mail cadastrado e solicite o link. Ao recebê-lo, abra a página `/reset-password` pelo link, preencha a nova senha e a confirmação e salve. Volte ao login e entre com a nova senha. O link é temporário; se expirar, solicite outro em `/forgot-password`.
+
+A recuperação utiliza os métodos `requestPasswordReset` e `resetPassword` do SDK instalado, os mesmos chamados pelos formulários de recuperação da biblioteca oficial. O envio depende do provedor de e-mail do Neon Auth estar configurado e do domínio da Vercel estar autorizado. Não é necessário alterar o banco ou recriar a conta. Não compartilhe o link de recuperação: ele contém o token que autoriza a troca de senha.
+
+O site retorna mensagem genérica de envio para não informar se um e-mail pertence a uma conta. A nova senha só é aceita com token validado pelo Neon Auth; as permissões do usuário não são modificadas.
+
 ## 4. Atualizar a Vercel
 
 1. Importe o repositório `Isaias-Barbosa/DITEC_Conecta`, ou use o projeto da Vercel já vinculado a ele.
@@ -109,7 +117,7 @@ A aplicação utiliza as funções do próprio Next.js na Vercel. A consulta ao 
 ## Segurança e permissões
 
 - Login e sessão usam o SDK oficial do Neon Auth e cookies gerenciados pelo servidor.
-- A aplicação expõe somente os endpoints de login, sessão, logout e confirmação de e-mail por código do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
+- A aplicação expõe somente os endpoints de login, sessão, logout, confirmação de e-mail por código e recuperação de senha com token do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
 - Cada chamada de dados verifica a sessão e consulta `app_members`. Revogar a associação corta o acesso aos dados, mesmo com uma sessão ainda válida.
 - O servidor permite alteração somente do campo `email`, com uma consulta parametrizada que também verifica a função `admin` no banco.
 - `reader` não pode editar e-mails. Campos de nome, função e bloqueio não são recebidos como alterações.
