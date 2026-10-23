@@ -80,6 +80,12 @@ npm run dev
 
 Abra http://localhost:3000/login, entre e acesse **Administração**. Preencha o e-mail/UPN de cada pessoa e clique em **Salvar** na respectiva linha. Contatos em vermelho permanecem bloqueados mesmo com e-mail.
 
+### Confirmar o e-mail da conta criada pelo terminal
+
+Na página `/login`, clique em **Confirmar e-mail com código**, informe o e-mail usado no terminal e o código recebido. Se expirou, clique em **Reenviar código** e use o mais recente. Após confirmar, entre com sua senha normalmente. O formulário também aparece automaticamente quando o Neon responde `EMAIL_NOT_VERIFIED` ao tentar entrar.
+
+Configure o Neon Auth para verificação por **código**, com provedor de e-mail habilitado. A confirmação não cria nova conta e não altera a permissão em `app_members`. Não é necessário recriar o administrador.
+
 ## 4. Atualizar a Vercel
 
 1. Importe o repositório `Isaias-Barbosa/DITEC_Conecta`, ou use o projeto da Vercel já vinculado a ele.
@@ -103,7 +109,7 @@ A aplicação utiliza as funções do próprio Next.js na Vercel. A consulta ao 
 ## Segurança e permissões
 
 - Login e sessão usam o SDK oficial do Neon Auth e cookies gerenciados pelo servidor.
-- A aplicação expõe somente os endpoints de login, sessão e logout do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
+- A aplicação expõe somente os endpoints de login, sessão, logout e confirmação de e-mail por código do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
 - Cada chamada de dados verifica a sessão e consulta `app_members`. Revogar a associação corta o acesso aos dados, mesmo com uma sessão ainda válida.
 - O servidor permite alteração somente do campo `email`, com uma consulta parametrizada que também verifica a função `admin` no banco.
 - `reader` não pode editar e-mails. Campos de nome, função e bloqueio não são recebidos como alterações.

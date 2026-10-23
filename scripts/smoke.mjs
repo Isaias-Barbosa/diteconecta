@@ -25,8 +25,11 @@ try{
  for(const path of ['sign-up/email','admin/set-role','admin/create-user']){
   const r=await fetch(base+'/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(r.status,404);
  }
- for(const path of ['/api/people','/api/teams','/api/auth/sign-in/email']){
+ for(const path of ['/api/people','/api/teams','/api/auth/sign-in/email','/api/auth/email-otp/verify-email','/api/auth/email-otp/send-verification-otp']){
   const r=await fetch(base+path,{method:path==='/api/people'?'PATCH':'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});assert.equal(r.status,403);
+ }
+ for(const [path,body] of [['email-otp/send-verification-otp',{email:'user@example.com',type:'sign-in'}],['email-otp/verify-email',{email:'user@example.com',otp:'bad-code'}]]){
+  const r=await fetch(base+'/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,400);
  }
  console.log('PASS: páginas, APIs sem sessão, demo desabilitada em produção, cadastro/funções bloqueados e origem externa recusada.');
 }finally{
