@@ -837,7 +837,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "f32ac1e7-1ab3-5149-8244-4633166a301d",
@@ -845,7 +845,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "370b0569-483a-52d5-a7e5-8d690adbe5d8",
@@ -853,7 +853,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "a47f273e-f6ce-58b3-9702-2f85e576c9b6",
@@ -861,7 +861,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "50dedf11-12bf-5fa0-b7b6-1e62384b7a1b",
@@ -869,7 +869,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "3c41e5dc-3d85-575c-ae81-eafaaffe8089",
@@ -877,7 +877,7 @@
     "area": "Superintendências",
     "email": null,
     "role": "Superintendente",
-    "blocked": false
+    "blocked": true
   },
   {
     "id": "ab203108-4c23-50f1-a43c-b6cd18278a08",

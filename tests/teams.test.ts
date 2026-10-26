@@ -15,10 +15,15 @@ test('não abre sem destinatário ou mensagem válida',()=>{
  for(const message of ['', '   ','a'.repeat(1501)])assert.throws(()=>teamsLink(person,message));
  for(const email of ['dois@empresa.com,outro@empresa.com','a@b.com;outro@b.com','x\ny@b.com'])assert.equal(isEmail(email),false);
 });
-test('base inclui todos os níveis e bloqueia os 23 nomes em vermelho',()=>{
+test('base inclui todos os níveis e bloqueia gerentes, diretoria e superintendências',()=>{
  assert.equal(seed.length,112);assert.equal(new Set(seed.map(p=>p.id)).size,112);
- assert.equal(seed.filter(p=>p.blocked).length,23);assert.ok(seed.every(p=>p.email===null));
+ assert.equal(seed.filter(p=>p.blocked).length,29);assert.ok(seed.every(p=>p.email===null));
  const area=seed.filter(p=>p.area==='Área de Sistemas de Adquirência');assert.equal(area.length,6);
  assert.deepEqual(area.filter(p=>p.blocked).map(p=>p.name),['Ricardo Jorge Osório de Cerqueira']);
  assert.equal(seed.filter(p=>p.role==='Superintendente').length,6);
+});
+
+test('superintendente é bloqueado mesmo se o banco antigo indicar blocked=false',()=>{
+ const superintendent=seed.find(p=>p.role==='Superintendente')!;
+ assert.throws(()=>teamsLink({...superintendent,blocked:false,email:'superintendente@example.com'},'Olá'),/bloqueado/);
 });

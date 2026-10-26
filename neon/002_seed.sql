@@ -106,12 +106,12 @@ insert into public.people(id,name,area,email,role,blocked) values
 ('2dd837a4-9727-5561-a80c-fd351d66e7ce','Joao Marcos de Souza Andrade','Área de Sistemas de Pagamentos Digitais e Atendimento',null,'Integrante',false),
 ('362c629e-c0cc-567d-97e6-d669911217f4','Thiago Prisco de Souza','Área de Qualidade e Testes',null,'Integrante',false),
 ('342fa36e-361e-5376-8cf9-0e35a1b3039d','Moisés da Silva Freitas','Área de Sistemas de Pagamentos Digitais e Atendimento',null,'Integrante',false),
-('3109cb66-b48c-549a-973e-b833ea67a6ff','Luciano Lamounier Magalhães','Superintendências',null,'Superintendente',false),
-('f32ac1e7-1ab3-5149-8244-4633166a301d','Brunno Giordano Mello Silva','Superintendências',null,'Superintendente',false),
-('370b0569-483a-52d5-a7e5-8d690adbe5d8','Márcio Alexandre de M. Rodrigues','Superintendências',null,'Superintendente',false),
-('a47f273e-f6ce-58b3-9702-2f85e576c9b6','Dênio Albaro de Lima Rodrigues','Superintendências',null,'Superintendente',false),
-('50dedf11-12bf-5fa0-b7b6-1e62384b7a1b','Josias Machado Sales de Campos Júnior','Superintendências',null,'Superintendente',false),
-('3c41e5dc-3d85-575c-ae81-eafaaffe8089','Edson Rodrigues Lisboa Junior','Superintendências',null,'Superintendente',false),
+('3109cb66-b48c-549a-973e-b833ea67a6ff','Luciano Lamounier Magalhães','Superintendências',null,'Superintendente',true),
+('f32ac1e7-1ab3-5149-8244-4633166a301d','Brunno Giordano Mello Silva','Superintendências',null,'Superintendente',true),
+('370b0569-483a-52d5-a7e5-8d690adbe5d8','Márcio Alexandre de M. Rodrigues','Superintendências',null,'Superintendente',true),
+('a47f273e-f6ce-58b3-9702-2f85e576c9b6','Dênio Albaro de Lima Rodrigues','Superintendências',null,'Superintendente',true),
+('50dedf11-12bf-5fa0-b7b6-1e62384b7a1b','Josias Machado Sales de Campos Júnior','Superintendências',null,'Superintendente',true),
+('3c41e5dc-3d85-575c-ae81-eafaaffe8089','Edson Rodrigues Lisboa Junior','Superintendências',null,'Superintendente',true),
 ('ab203108-4c23-50f1-a43c-b6cd18278a08','Antônio Cândido Vilaça Júnior','Diretoria de Tecnologia da Informação',null,'Diretor',true),
 ('f2789b02-e377-56ee-b5c0-098ee1b233c8','Gleicione De Oliveira Alves','Secretaria Executiva de TI',null,'Secretária executiva',false)
 on conflict(id) do update set name=excluded.name, area=excluded.area, role=excluded.role, blocked=excluded.blocked;

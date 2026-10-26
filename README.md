@@ -5,7 +5,7 @@ Diretório corporativo em **Next.js + TypeScript**, com **PostgreSQL e Neon Auth
 ## Funcionalidades
 
 - 112 pessoas do PDF atualizado em 03/06/2026, em 25 agrupamentos.
-- 23 nomes em vermelho visíveis somente para consulta, sem preparação de mensagens.
+- 29 contatos somente para consulta: os 23 nomes em vermelho do PDF e os 6 superintendentes. Gerentes e diretoria aparecem em vermelho; superintendentes, em azul.
 - Busca por nome, área e e-mail; filtros por área e contatos habilitados.
 - Página `/admin` com todos os contatos para cadastrar, corrigir ou apagar o e-mail/UPN do Teams.
 - Modal para digitar, copiar o texto e abrir a conversa privada no Teams.
@@ -202,3 +202,10 @@ A conexão real ao banco, o provisionamento de contas e a conversa no Teams deve
 - `tests/`: validações de links e controles de acesso.
 
 Documentação oficial: https://neon.com/docs/auth/quick-start/nextjs-api-only e https://neon.com/docs/serverless/serverless-driver
+
+
+## Superintendentes somente para consulta
+
+Os seis superintendentes aparecem em azul e não podem preparar mensagens, mesmo com e-mail cadastrado. O servidor e a interface aplicam a regra pela função `Superintendente`, incluindo bancos antigos que ainda tenham `blocked=false`. O bloqueio entra em vigor após o deploy, sem necessidade de recadastrar contatos.
+
+Opcionalmente, execute `neon/003_block_superintendents.sql` no banco existente para persistir o bloqueio na coluna `blocked`. O script preserva e-mails. Em bancos novos, o seed já inclui os seis superintendentes bloqueados.
