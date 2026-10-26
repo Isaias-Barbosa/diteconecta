@@ -55,3 +55,9 @@
 .users-summary b{color:var(--ink);margin-right:5px}
 .current-user{display:block;margin-top:6px}
 .badge.admin-badge{background:var(--light);color:var(--purple)}
+
+/* Favoritos individuais: a estrela não altera as permissões de mensagem. */
+.favorite-button{display:grid;place-items:center;flex-shrink:0;width:27px;height:27px;border:1px solid #e7e8ee;border-radius:6px;background:white;color:#9aa1ae}
+.favorite-button:hover{border-color:#ddbd62;color:#aa7a17;background:#fffbef}
+.favorite-button.is-favorite{color:#b68416;border-color:#ecd597;background:#fff8e5}
+@media(max-width:650px){.favorite-button{width:31px;height:31px}.sidebar{gap:10px;flex-wrap:wrap}.sidebar nav{margin-left:auto}}

@@ -39,6 +39,15 @@ try{
  assert.equal(executive.status,200);assert.equal(executive.data.person.blocked,true);
  assert.equal((await call('/api/teams','POST',{id:executive.data.person.id,message:'teste'})).status,400);
  const person=initial.data.people.find(p=>!p.blocked);
+ assert.deepEqual((await call('/api/favorites')).data.ids,[]);
+ for(let attempt=0;attempt<2;attempt++)assert.equal((await call('/api/favorites','PUT',{id:person.id,favorite:true})).status,200);
+ assert.deepEqual((await call('/api/favorites')).data.ids,[person.id]);
+ assert.equal((await call('/api/favorites','PUT',{id:person.id,favorite:false})).status,200);
+ assert.deepEqual((await call('/api/favorites')).data.ids,[]);
+ assert.equal((await call('/api/favorites','PUT',{id:person.id,favorite:true,userId:'other'})).status,400);
+ assert.equal((await call('/api/favorites','PUT',{id:person.id,favorite:true})).status,200);
+ assert.equal((await call('/api/favorites','PUT',{id:executive.data.person.id,favorite:true})).status,200);
+ assert.equal((await call('/api/teams','POST',{id:executive.data.person.id,message:'teste'})).status,400);
  const body={id:person.id,email:'contato-teste@example.com',user_unknown:true,user_not_found:false,absence_type:null,return_date:null};
  let result=await call('/api/people','PATCH',body);assert.equal(result.status,200);assert.equal(result.data.person.user_unknown,true);
  result=await call('/api/people','PATCH',{...body,user_unknown:false,user_not_found:true});assert.equal(result.status,200);assert.equal(result.data.person.user_not_found,true);
@@ -50,6 +59,10 @@ try{
  list=await call('/api/people');assert.ok(!list.data.people.some(p=>p.id===person.id));
  result=await call('/api/teams','POST',{id:person.id,message:'Mensagem de teste que não será aberta'});assert.equal(result.status,404);
  result=await call('/api/people','DELETE',{id:person.id});assert.equal(result.status,404);
+ assert.ok(!(await call('/api/favorites')).data.ids.includes(person.id));
+ assert.equal((await call('/api/favorites','PUT',{id:person.id,favorite:true})).status,404);
+ assert.equal((await call('/api/favorites','PUT',{id:executive.data.person.id,favorite:false})).status,200);
+ console.log('PASS: favoritar, desfavoritar, evitar duplicação, rejeitar identidade externa, ocultar excluído e preservar bloqueio de mensagens.');
  console.log('PASS: cadastro de contato, área nova, e-mail duplicado e bloqueio da Secretaria Executiva.');
  console.log('PASS: editar e-mail e situações, persistir na leitura, validar retorno e cargos protegidos, excluir e impedir conversa para contato excluído.');
 }finally{

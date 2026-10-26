@@ -255,3 +255,13 @@ Não há colunas novas para este cadastro. O banco com a migração 004 aplicada
 - Os contatos em `people` e as contas de login são independentes. Adicionar um contato não cria uma conta de login.
 
 **Implantação:** não há migração SQL nova. As rotas usam a tabela existente `public.app_members` e consultam `neon_auth."user"` na mesma branch do Neon Auth. Use a conexão privada do proprietário em `DATABASE_URL`. O cadastro por e-mail/senha deve estar habilitado no Neon Auth, e o domínio da aplicação deve estar em Domains. Se o acesso inicial foi perdido, use o procedimento de provisionamento acima; cadastros públicos nunca recebem a função de administrador.
+
+## Favoritos individuais
+
+Execute **`neon/006_favorites.sql`** no SQL Editor do Neon, na mesma branch usada em `DATABASE_URL`. A migração é idempotente e não altera contatos, e-mails ou contas. Instalações novas já incluem a tabela em `001_schema.sql`.
+
+A estrela ao lado do botão de mensagem salva ou remove um contato nos favoritos da conta autenticada. **Favoritos** (`/favorites`) no menu mostra apenas essa lista, com busca, filtro de área e preparação de mensagens. Contatos de gestão podem ser salvos para consulta e continuam bloqueados para mensagens. Contatos sem e-mail também podem ser favoritados.
+
+As rotas `GET /api/favorites` e `PUT /api/favorites` exigem uma conta aprovada. O servidor identifica a conta pela sessão; o navegador envia somente `id` do contato e `favorite` booleano. Não existe parâmetro para escolher outro usuário, nem acesso administrativo aos favoritos alheios. A chave composta impede duplicações. A tabela não é pública, tem RLS sem políticas de acesso direto, e somente a conexão privada do proprietário é usada pelo servidor. Preferências continuam salvas entre sessões e aparelhos; revogar/reaprovar o acesso preserva a lista. Contatos excluídos deixam de ser exibidos nos favoritos.
+
+Antes da migração, o diretório continua funcionando e mostra um aviso de que os favoritos precisam ser habilitados. As estrelas ficam desabilitadas enquanto a lista não carregar. Salvamentos que falham mantêm o estado anterior e mostram o erro.
