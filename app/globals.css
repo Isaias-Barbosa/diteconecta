@@ -47,3 +47,11 @@
 .person.executive.person-not-found{background:#fff3f3}
 .heading-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:900px){.heading-actions{justify-content:flex-start;margin-top:18px}.heading-actions .source-date{margin-top:0}}
+
+/* Contas de acesso ao sistema. */
+.registration-fields{border:0;padding:0;margin:0;min-width:0}
+.users-summary{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;color:#7c8596;font-size:12px}
+.users-summary span{background:white;border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.users-summary b{color:var(--ink);margin-right:5px}
+.current-user{display:block;margin-top:6px}
+.badge.admin-badge{background:var(--light);color:var(--purple)}

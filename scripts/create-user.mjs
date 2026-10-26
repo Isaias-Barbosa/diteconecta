@@ -3,7 +3,7 @@ import { Writable } from 'node:stream';
 import { stdin, stdout } from 'node:process';
 import { neon } from '@neondatabase/serverless';
 
-// Provisioning runs only on the operator's machine; no signup endpoint is exposed by the app.
+// Initial privileged provisioning runs only on the operator's machine; website signup grants no membership.
 const authUrl=process.env.NEON_AUTH_BASE_URL;
 const databaseUrl=process.env.DATABASE_URL;
 if(!authUrl || !databaseUrl){console.error('Preencha NEON_AUTH_BASE_URL e DATABASE_URL em .env.local.');process.exit(1);}

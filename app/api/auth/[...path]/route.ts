@@ -1,18 +1,23 @@
 import { NextRequest } from 'next/server';
 import { getAuth } from '@/lib/auth/server';
 import {isAllowedAuthRoute} from '@/lib/auth/routes';
+import {validSignup} from '@/lib/users';
 import {isEmail} from '@/lib/teams';
 import {validResetRequest,validResetSubmission} from '@/lib/auth/password-reset';
 import {AccessError,fail,sameOrigin} from '@/lib/server';
 
 type Context={params:Promise<{path:string[]}>};
-// Only the endpoints used by this application are exposed. No signup or role management API.
+// Only the endpoints used by this application are exposed. Signup grants no membership.
 async function handle(request:NextRequest,context:Context){try{
  const {path}=await context.params;
  const endpoint=path.join('/');
  const allowed=isAllowedAuthRoute(request.method,endpoint);
  if(!allowed)throw new AccessError('Operação de autenticação não disponível.',404);
  if(request.method==='POST')sameOrigin(request);
+ if(endpoint==='sign-up/email'){
+  let body;try{body=await request.clone().json();}catch{throw new AccessError('Dados inválidos.',400);}
+  if(!validSignup(body))throw new AccessError('Informe nome, e-mail válido e senha de 8 a 128 caracteres.',400);
+ }
  if(endpoint==='request-password-reset'||endpoint==='reset-password'){
   let body;try{body=await request.clone().json();}catch{throw new AccessError('Dados inválidos.',400);}
   const valid=endpoint==='request-password-reset'?validResetRequest(body,new URL(request.url).origin):validResetSubmission(body);

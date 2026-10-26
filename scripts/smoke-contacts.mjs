@@ -19,6 +19,15 @@ try{
   await delay(300);
  }
  assert.ok(ready,'Servidor não iniciou: '+logs);
+ const userList=await call('/api/users');assert.equal(userList.status,200);
+ assert.ok(userList.data.users.some(u=>u.role==='pending'));
+ for(const role of ['reader','admin','pending']){
+  assert.equal((await call('/api/users','PATCH',{id:'demo-pending',role})).status,200);
+  assert.equal((await call('/api/users')).data.users.find(u=>u.id==='demo-pending').role,role);
+ }
+ assert.equal((await call('/api/users','PATCH',{id:'demo-admin',role:'reader'})).status,400);
+ assert.equal((await call('/api/users','PATCH',{id:'demo-pending',role:'superadmin'})).status,400);
+ console.log('PASS: usuários pendentes, aprovação, promoção, revogação e proteção da própria conta.');
  const initial=await call('/api/people');assert.equal(initial.status,200);assert.equal(initial.data.demo,true);
  let created=await call('/api/people','POST',{name:'Novo Contato Teste',area:'Área nova de testes',email:'novo-teste@example.com',role:'Integrante'});
  assert.equal(created.status,200);assert.equal(created.data.person.blocked,false);assert.ok(created.data.person.id);

@@ -10,7 +10,7 @@ Diretório corporativo em **Next.js + TypeScript**, com **PostgreSQL e Neon Auth
 - Página `/admin` com coluna Opções, edição do e-mail e da situação em modal e exclusão com confirmação.
 - Modal para digitar, copiar o texto e abrir a conversa privada no Teams.
 - Login por e-mail/senha com Neon Auth; permissões `admin` e `reader` no banco.
-- Bloqueios e permissões verificados no servidor. Nenhum cadastro público ou promoção de função pela interface.
+- Bloqueios e permissões verificados no servidor. Cadastros solicitam acesso; somente administradores aprovam usuários e alteram permissões.
 
 ## 1. Criar o banco e habilitar o Neon Auth
 
@@ -62,7 +62,7 @@ npm run user:create
 
 O script solicita e-mail, nome, permissão (`admin` ou `reader`) e senha sem exibi-la. Ele cria a conta no Neon Auth e associa seu ID à tabela `app_members`. Execute apenas na sua máquina. O endereço em `APP_URL` deve estar nas origens confiáveis do Neon Auth. O provedor de e-mail/senha deve permitir o provisionamento da conta.
 
-Se a conta já existir no Neon Auth, não execute o cadastro novamente. Libere ou altere a permissão no SQL Editor, usando o ID da conta em Auth → Users:
+Se a conta já existir no Neon Auth, não execute o cadastro novamente. Um administrador existente pode liberar ou alterar o acesso em **Usuários** no menu. Para recuperar o acesso inicial, use o SQL Editor com o ID da conta em Auth → Users:
 
 ```sql
 insert into public.app_members(user_id,role)
@@ -244,3 +244,14 @@ Em **Administração → Novo contato**, informe nome, área/unidade, cargo e, o
 A criação exige administrador e não cria uma conta de login. O identificador é gerado no servidor; cargos de gestão (Gerente, Superintendente, Diretor e Secretária executiva) são automaticamente bloqueados. O cliente não pode escolher ou remover esse bloqueio. Um e-mail já utilizado por outro contato ativo é recusado.
 
 Não há colunas novas para este cadastro. O banco com a migração 004 aplicada já está preparado. Cadastros manuais e suas situações são preservados ao reexecutar o seed.
+
+## Usuários do sistema e solicitações de acesso
+
+- **Criar conta / solicitar acesso**, no login, abre `/register`: nome, e-mail e senha. A conta é criada no Neon Auth e continua sem acesso ao diretório até aprovação.
+- **Usuários** (`/admin/users`) aparece somente para administradores. A lista mostra todas as contas do Neon Auth, inclusive as criadas pelo terminal, com nome, e-mail, confirmação de e-mail e permissão. A busca por nome/e-mail e o filtro de permissão podem ser combinados.
+- Em **Editar acesso**, escolha **Usuário** (consulta e preparação de mensagens), **Administrador** (também gerencia contatos e acessos) ou **Sem acesso / pendente** (revoga o acesso preservando a conta). Cada chamada de dados consulta `app_members`, então sessões existentes também perdem o acesso após revogação.
+- O administrador não pode alterar a própria permissão; outro administrador deve fazer isso.
+- A confirmação por e-mail continua nas opções do Neon Auth. Código e reenvio estão na tela de login. Confirmar e-mail não aprova o acesso automaticamente.
+- Os contatos em `people` e as contas de login são independentes. Adicionar um contato não cria uma conta de login.
+
+**Implantação:** não há migração SQL nova. As rotas usam a tabela existente `public.app_members` e consultam `neon_auth."user"` na mesma branch do Neon Auth. Use a conexão privada do proprietário em `DATABASE_URL`. O cadastro por e-mail/senha deve estar habilitado no Neon Auth, e o domínio da aplicação deve estar em Domains. Se o acesso inicial foi perdido, use o procedimento de provisionamento acima; cadastros públicos nunca recebem a função de administrador.

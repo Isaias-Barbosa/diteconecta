@@ -12,6 +12,7 @@ const upstream=createServer(async(req,res)=>{
  const body=raw?JSON.parse(raw):{};
  captured.push({path:req.url,body});
  res.setHeader('Content-Type','application/json');
+ if(req.url==='/auth/sign-up/email')return res.end(JSON.stringify({user:{id:'signup-test',name:body.name,email:body.email,emailVerified:false},token:null}));
  if(req.url==='/auth/request-password-reset')return res.end(JSON.stringify({status:true,message:'Request received'}));
  if(req.url==='/auth/reset-password'){
   if(body.token==='expired-test-token'){res.statusCode=400;return res.end(JSON.stringify({message:'Invalid token',code:'INVALID_TOKEN'}));}
@@ -32,17 +33,17 @@ try{
   await delay(200);
  }
  assert.ok(ready,'Servidor não ficou pronto: '+logs);
- for(const path of ['/','/login','/admin','/forgot-password','/reset-password'])assert.equal((await fetch(base+path)).status,200);
- for(const [path,method,data] of [['/api/people','GET',null],['/api/people','POST',{name:'Teste',area:'Área',role:'Integrante'}],['/api/people','PATCH',{id:'x',email:'a@b.com'}],['/api/people','DELETE',{id:'x'}],['/api/teams','POST',{id:'x',message:'Olá'}]]){
+ for(const path of ['/','/login','/admin','/forgot-password','/reset-password','/register','/admin/users'])assert.equal((await fetch(base+path)).status,200);
+ for(const [path,method,data] of [['/api/users','GET',null],['/api/users','PATCH',{id:'x',role:'admin'}],['/api/people','GET',null],['/api/people','POST',{name:'Teste',area:'Área',role:'Integrante'}],['/api/people','PATCH',{id:'x',email:'a@b.com'}],['/api/people','DELETE',{id:'x'}],['/api/teams','POST',{id:'x',message:'Olá'}]]){
   const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});
   assert.equal(r.status,401,`${method} ${path} deve exigir login, mesmo com DEMO_MODE=true em produção`);
   assert.ok(!(await r.text()).includes('Acacio'),'Nenhum contato deve ser exposto');
  }
- for(const path of ['sign-up/email','admin/set-role','admin/create-user']){
+ for(const path of ['admin/set-role','admin/create-user']){
   const r=await fetch(base+'/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(r.status,404);
  }
- for(const path of ['/api/people','/api/teams','/api/auth/sign-in/email','/api/auth/email-otp/verify-email','/api/auth/email-otp/send-verification-otp','/api/auth/request-password-reset','/api/auth/reset-password']){
-  const r=await fetch(base+path,{method:path==='/api/people'?'PATCH':'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});assert.equal(r.status,403);
+ for(const path of ['/api/users','/api/auth/sign-up/email','/api/people','/api/teams','/api/auth/sign-in/email','/api/auth/email-otp/verify-email','/api/auth/email-otp/send-verification-otp','/api/auth/request-password-reset','/api/auth/reset-password']){
+  const r=await fetch(base+path,{method:['/api/people','/api/users'].includes(path)?'PATCH':'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});assert.equal(r.status,403);
  }
  for(const [path,body] of [['email-otp/send-verification-otp',{email:'user@example.com',type:'sign-in'}],['email-otp/verify-email',{email:'user@example.com',otp:'bad-code'}]]){
   const r=await fetch(base+'/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,400);
@@ -50,6 +51,12 @@ try{
  for(const [path,body] of [['request-password-reset',{email:'user@example.com',redirectTo:'https://evil.example/reset-password'}],['reset-password',{token:'',newPassword:'curta'}]]){
   const r=await fetch(base+'/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,400);
  }
+ const signup={name:'Pessoa Teste',email:'test@example.com',password:'test-only-password'};
+ for(const body of [{}, {...signup,role:'admin'}, {...signup,emailVerified:true}]){
+  const response=await fetch(base+'/api/auth/sign-up/email',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify(body)});assert.equal(response.status,400);
+ }
+ const created=await fetch(base+'/api/auth/sign-up/email',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify(signup)});
+ assert.equal(created.status,200,await created.text());assert.equal(captured.at(-1).path,'/auth/sign-up/email');assert.deepEqual(captured.at(-1).body,signup);
  const requestReset=await fetch(base+'/api/auth/request-password-reset',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({email:'test@example.com',redirectTo:base+'/reset-password'})});
  assert.equal(requestReset.status,200,await requestReset.text());
  assert.equal(captured.at(-1).path,'/auth/request-password-reset');
@@ -63,7 +70,7 @@ try{
  const createFromOutside=await fetch(base+'/api/people',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});assert.equal(createFromOutside.status,403);
  const deleteFromOutside=await fetch(base+'/api/people',{method:'DELETE',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:JSON.stringify({id:'x'})});assert.equal(deleteFromOutside.status,403);
  console.log('PASS: recuperação e link expirado via SDK com serviço local simulado.');
- console.log('PASS: páginas, APIs sem sessão, demo desabilitada em produção, cadastro/funções bloqueados e origem externa recusada.');
+ console.log('PASS: páginas, APIs sem sessão, demo desabilitada em produção, cadastro validado sem privilégios, funções administrativas protegidas e origem externa recusada.');
 }finally{
  upstream.closeAllConnections();await new Promise(resolve=>upstream.close(resolve));
  child.kill('SIGTERM');
