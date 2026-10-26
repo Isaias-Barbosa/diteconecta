@@ -5,7 +5,7 @@ Diretório corporativo em **Next.js + TypeScript**, com **PostgreSQL e Neon Auth
 ## Funcionalidades
 
 - 112 pessoas do PDF atualizado em 03/06/2026, em 25 agrupamentos.
-- 29 contatos somente para consulta: os 23 nomes em vermelho do PDF e os 6 superintendentes. Gerentes e diretoria aparecem em vermelho; superintendentes, em azul.
+- 30 contatos originais somente para consulta: os 23 nomes em vermelho do PDF, os 6 superintendentes e a Secretaria Executiva de TI. Gerentes e diretoria aparecem em vermelho; superintendentes, em azul; a Secretaria Executiva, em verde-petróleo.
 - Busca por nome, área e e-mail; filtros por área e contatos habilitados.
 - Página `/admin` com coluna Opções, edição do e-mail e da situação em modal e exclusão com confirmação.
 - Modal para digitar, copiar o texto e abrir a conversa privada no Teams.
@@ -233,3 +233,14 @@ update public.people set deleted_at=null where id='ID_DO_CONTATO';
 ```
 
 Os testes de contatos utilizam somente a demonstração local em memória, sem alterar o banco real ou enviar mensagens no Teams.
+
+
+## Secretaria Executiva e cadastro manual
+
+A Secretaria Executiva recebe destaque em **verde-petróleo**, aparece primeiro nos cards e fica somente para consulta, mesmo em bancos antigos que indiquem `blocked=false`. O seed já inclui o bloqueio. O script opcional `neon/005_block_executive_secretary.sql` persiste essa marcação no banco existente sem alterar e-mails ou situações.
+
+Em **Administração → Novo contato**, informe nome, área/unidade, cargo e, opcionalmente, o e-mail do Teams. A área oferece sugestões das unidades existentes e permite digitar uma nova. Após salvar, o contato aparece na tabela e no card da respectiva área. As opções de situação podem ser ajustadas depois em Editar.
+
+A criação exige administrador e não cria uma conta de login. O identificador é gerado no servidor; cargos de gestão (Gerente, Superintendente, Diretor e Secretária executiva) são automaticamente bloqueados. O cliente não pode escolher ou remover esse bloqueio. Um e-mail já utilizado por outro contato ativo é recusado.
+
+Não há colunas novas para este cadastro. O banco com a migração 004 aplicada já está preparado. Cadastros manuais e suas situações são preservados ao reexecutar o seed.

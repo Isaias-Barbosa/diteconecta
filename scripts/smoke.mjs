@@ -33,7 +33,7 @@ try{
  }
  assert.ok(ready,'Servidor não ficou pronto: '+logs);
  for(const path of ['/','/login','/admin','/forgot-password','/reset-password'])assert.equal((await fetch(base+path)).status,200);
- for(const [path,method,data] of [['/api/people','GET',null],['/api/people','PATCH',{id:'x',email:'a@b.com'}],['/api/people','DELETE',{id:'x'}],['/api/teams','POST',{id:'x',message:'Olá'}]]){
+ for(const [path,method,data] of [['/api/people','GET',null],['/api/people','POST',{name:'Teste',area:'Área',role:'Integrante'}],['/api/people','PATCH',{id:'x',email:'a@b.com'}],['/api/people','DELETE',{id:'x'}],['/api/teams','POST',{id:'x',message:'Olá'}]]){
   const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});
   assert.equal(r.status,401,`${method} ${path} deve exigir login, mesmo com DEMO_MODE=true em produção`);
   assert.ok(!(await r.text()).includes('Acacio'),'Nenhum contato deve ser exposto');
@@ -60,6 +60,7 @@ try{
   assert.equal(captured.at(-1).path,'/auth/reset-password');
   if(status===400)assert.equal((await r.json()).code,'INVALID_TOKEN');
  }
+ const createFromOutside=await fetch(base+'/api/people',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});assert.equal(createFromOutside.status,403);
  const deleteFromOutside=await fetch(base+'/api/people',{method:'DELETE',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:JSON.stringify({id:'x'})});assert.equal(deleteFromOutside.status,403);
  console.log('PASS: recuperação e link expirado via SDK com serviço local simulado.');
  console.log('PASS: páginas, APIs sem sessão, demo desabilitada em produção, cadastro/funções bloqueados e origem externa recusada.');

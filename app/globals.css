@@ -34,3 +34,16 @@
 .edit-fields .status-checkboxes input{width:15px;height:15px;padding:0;margin:0;accent-color:var(--purple)}
 .return-hint{display:block;line-height:1.6;margin-top:-8px}
 .table-person .contact-status{font-size:9px;max-width:230px}
+/* Secretaria Executiva: liderança em verde-petróleo. */
+.area-card.executive-area{border-color:#afd4cc;box-shadow:0 0 0 1px #dceee8}
+.executive-area .area-symbol{background:#e4f3ee;color:#167366}
+.person.executive{background:#f0faf6}
+.person.executive .person-info strong,.table-person.executive strong{color:#116f60}
+.person.executive .avatar,.table-person.executive .avatar{background:#dcefe8;color:#167366}
+.person.executive .person-info small{color:#578b7f}
+.person.executive .contact-button:disabled{color:#679d90;border-color:#d4e9e2;background:#f7fcfa}
+.badge.executive-badge{background:#e1f2ec;color:#167366}
+.person.executive.person-unknown{background:#fffbef}
+.person.executive.person-not-found{background:#fff3f3}
+.heading-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:900px){.heading-actions{justify-content:flex-start;margin-top:18px}.heading-actions .source-date{margin-top:0}}

@@ -1,10 +1,12 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {LoaderCircle,Pencil,Trash2,X} from 'lucide-react';
+import {LoaderCircle,Pencil,Trash2,UserPlus,X} from 'lucide-react';
 import {api} from '@/lib/browser';
 import type {AbsenceType,Person} from '@/lib/types';
 import {activeAbsence,businessDate} from '@/lib/contact-status';
 import {parsePersonUpdate} from '@/lib/person-update';
+import {parsePersonCreate} from '@/lib/person-create';
+import {CONTACT_ROLES,isContactBlocked} from '@/lib/contacts';
 
 export function EditContactModal({person,onSave,onClose}:{person:Person;onSave:(person:Person)=>void;onClose:()=>void}){
  const dialog=useRef<HTMLDialogElement>(null);
@@ -27,4 +29,20 @@ export function DeleteContactModal({person,onDeleted,onClose}:{person:Person;onD
  useEffect(()=>{const el=dialog.current;el?.showModal();return()=>el?.close();},[]);
  async function remove(){setBusy(true);setError('');try{const {id}=await api('/api/people',{method:'DELETE',body:JSON.stringify({id:person.id})});onDeleted(id);}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
  return <dialog ref={dialog} className="message-modal" aria-labelledby="delete-contact-title" onCancel={e=>{e.preventDefault();if(!busy)onClose();}} onClick={e=>{if(e.target===e.currentTarget&&!busy)onClose();}}><div className="modal-header"><div className="modal-icon delete-icon"><Trash2 size={22}/></div><button disabled={busy} aria-label="Cancelar exclusão" onClick={onClose}><X size={20}/></button></div><h2 id="delete-contact-title">Excluir contato?</h2><p><strong>{person.name}</strong> deixará de aparecer no diretório e na administração.</p><p className="modal-description">Isso não exclui nenhuma conta de acesso ao site. Os dados do contato são preservados para recuperação administrativa.</p>{error&&<p className="error" role="alert">{error}</p>}<div className="modal-actions"><button autoFocus className="secondary" disabled={busy} onClick={onClose}>Cancelar</button><button className="danger-button" disabled={busy} onClick={remove}>{busy?<LoaderCircle className="spin" size={16}/>:<Trash2 size={16}/>} {busy?'Excluindo…':'Excluir contato'}</button></div></dialog>;
+}
+
+export function CreateContactModal({areas,onCreated,onClose}:{areas:string[];onCreated:(person:Person)=>void;onClose:()=>void}){
+ const dialog=useRef<HTMLDialogElement>(null);
+ const[name,setName]=useState(''),[area,setArea]=useState(''),[email,setEmail]=useState(''),[role,setRole]=useState<string>('Integrante');
+ const[busy,setBusy]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{const el=dialog.current;el?.showModal();return()=>el?.close();},[]);
+ async function save(e:React.FormEvent<HTMLFormElement>){
+  e.preventDefault();setError('');
+  const body={name,area,email:email.trim()||null,role};
+  try{parsePersonCreate(body);}catch(e){setError((e as Error).message);return;}
+  setBusy(true);
+  try{const {person}=await api('/api/people',{method:'POST',body:JSON.stringify(body)});onCreated(person);}catch(e){setError((e as Error).message);}finally{setBusy(false);}
+ }
+ const blocked=isContactBlocked({role,blocked:false});
+ return <dialog ref={dialog} className="message-modal edit-contact-modal" aria-labelledby="create-contact-title" onCancel={e=>{e.preventDefault();if(!busy)onClose();}} onClick={e=>{if(e.target===e.currentTarget&&!busy)onClose();}}><div className="modal-header"><div className="modal-icon"><UserPlus size={22}/></div><button disabled={busy} aria-label="Fechar cadastro" onClick={onClose}><X size={20}/></button></div><span className="eyebrow">ADMINISTRAÇÃO DO DIRETÓRIO</span><h2 id="create-contact-title">Novo contato</h2><p className="modal-description">Cadastre uma pessoa no diretório. Este cadastro não cria uma conta de acesso ao site.</p><form onSubmit={save}><fieldset disabled={busy} className="edit-fields"><label htmlFor="new-contact-name">Nome completo</label><input autoFocus id="new-contact-name" required minLength={2} maxLength={160} autoComplete="off" value={name} onChange={e=>setName(e.target.value)} placeholder="Nome da pessoa"/><label htmlFor="new-contact-area">Área / unidade</label><input id="new-contact-area" required minLength={2} maxLength={160} list="contact-area-suggestions" autoComplete="off" value={area} onChange={e=>setArea(e.target.value)} placeholder="Selecione ou digite uma nova área"/><datalist id="contact-area-suggestions">{areas.map(a=><option key={a} value={a}/>)}</datalist><label htmlFor="new-contact-email">E-mail do Teams (opcional)</label><input id="new-contact-email" type="email" maxLength={254} autoComplete="off" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nome@empresa.com.br"/><label htmlFor="new-contact-role">Cargo</label><select id="new-contact-role" value={role} onChange={e=>setRole(e.target.value)}>{CONTACT_ROLES.map(r=><option key={r} value={r}>{r}</option>)}</select>{blocked?<div className="modal-note"><p>Este cargo será cadastrado somente para consulta, sem preparação de mensagens.</p></div>:<small>O contato poderá preparar conversas após cadastrar o e-mail do Teams.</small>}</fieldset>{error&&<p className="error" role="alert">{error}</p>}<div className="modal-actions"><button className="secondary" type="button" disabled={busy} onClick={onClose}>Cancelar</button><button className="primary" disabled={busy}>{busy?<LoaderCircle size={16} className="spin"/>:<UserPlus size={16}/>} {busy?'Cadastrando…':'Cadastrar contato'}</button></div></form></dialog>;
 }

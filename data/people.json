@@ -893,6 +893,6 @@
     "area": "Secretaria Executiva de TI",
     "email": null,
     "role": "Secretária executiva",
-    "blocked": false
+    "blocked": true
   }
 ]

@@ -1,6 +1,8 @@
 import {access,demo,demoPeople,fail,json,AccessError,sameOrigin} from '@/lib/server';
 import {applyContactPolicy} from '@/lib/contacts';
 import {parsePersonUpdate} from '@/lib/person-update';
+import {parsePersonCreate} from '@/lib/person-create';
+import {randomUUID} from 'node:crypto';
 import type {Person} from '@/lib/types';
 function writeError(error:unknown){
  const code=(error as {code?:string}).code;
@@ -48,4 +50,21 @@ export async function DELETE(request:Request){try{
   if(!rows[0])throw new AccessError('Contato não encontrado ou permissão revogada.',404);
  }
  return json({id:body.id,deleted:true});
+}catch(e){return writeError(e);}}
+
+export async function POST(request:Request){try{
+ sameOrigin(request);
+ const session=demo?null:await access(request);
+ if(session&&!session.admin)throw new AccessError('Somente administradores podem cadastrar contatos.',403);
+ let body;try{body=await request.json();}catch{throw new AccessError('Dados inválidos.',400);}
+ let input;try{input=parsePersonCreate(body);}catch(e){throw new AccessError((e as Error).message,400);}
+ const id=randomUUID();
+ if(demo){
+  if(input.email&&demoPeople().some(p=>!p.deleted_at&&p.email?.toLowerCase()===input.email))throw new AccessError('Este e-mail já está cadastrado em outro contato.',409);
+  const person=applyContactPolicy({id,...input});demoPeople().push(person);return json({person});
+ }
+ const {sql,userId}=session!;
+ const rows=await sql`insert into public.people(id,name,area,email,role,blocked) select ${id}::uuid,${input.name},${input.area},${input.email},${input.role},${input.blocked} where exists(select 1 from public.app_members where user_id=${userId} and role='admin') returning *`;
+ if(!rows[0])throw new AccessError('Permissão de cadastro revogada.',403);
+ return json({person:applyContactPolicy(rows[0] as Person)});
 }catch(e){return writeError(e);}}

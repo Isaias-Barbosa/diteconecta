@@ -17,7 +17,7 @@ test('não abre sem destinatário ou mensagem válida',()=>{
 });
 test('base inclui todos os níveis e bloqueia gerentes, diretoria e superintendências',()=>{
  assert.equal(seed.length,112);assert.equal(new Set(seed.map(p=>p.id)).size,112);
- assert.equal(seed.filter(p=>p.blocked).length,29);assert.ok(seed.every(p=>p.email===null));
+ assert.equal(seed.filter(p=>p.blocked).length,30);assert.ok(seed.every(p=>p.email===null));
  const area=seed.filter(p=>p.area==='Área de Sistemas de Adquirência');assert.equal(area.length,6);
  assert.deepEqual(area.filter(p=>p.blocked).map(p=>p.name),['Ricardo Jorge Osório de Cerqueira']);
  assert.equal(seed.filter(p=>p.role==='Superintendente').length,6);

@@ -113,6 +113,6 @@ insert into public.people(id,name,area,email,role,blocked) values
 ('50dedf11-12bf-5fa0-b7b6-1e62384b7a1b','Josias Machado Sales de Campos Júnior','Superintendências',null,'Superintendente',true),
 ('3c41e5dc-3d85-575c-ae81-eafaaffe8089','Edson Rodrigues Lisboa Junior','Superintendências',null,'Superintendente',true),
 ('ab203108-4c23-50f1-a43c-b6cd18278a08','Antônio Cândido Vilaça Júnior','Diretoria de Tecnologia da Informação',null,'Diretor',true),
-('f2789b02-e377-56ee-b5c0-098ee1b233c8','Gleicione De Oliveira Alves','Secretaria Executiva de TI',null,'Secretária executiva',false)
+('f2789b02-e377-56ee-b5c0-098ee1b233c8','Gleicione De Oliveira Alves','Secretaria Executiva de TI',null,'Secretária executiva',true)
 on conflict(id) do update set name=excluded.name, area=excluded.area, role=excluded.role, blocked=excluded.blocked;
 commit;

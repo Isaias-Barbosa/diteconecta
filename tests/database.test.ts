@@ -11,7 +11,7 @@ test('schema e seed Neon: carga idempotente, e-mails preservados e constraints a
   await db.exec(schema);await db.exec(seed);
   await db.exec(await readFile(new URL('../neon/004_contact_status.sql',import.meta.url),'utf8'));
   const result=await db.query<{total:number;blocked:number}>(`select count(*)::int total,count(*) filter(where blocked)::int blocked from people`);
-  assert.deepEqual(result.rows,[{total:112,blocked:29}]);
+  assert.deepEqual(result.rows,[{total:112,blocked:30}]);
   // IDs from the managed provider may be strings; they need not be Postgres UUIDs.
   await db.query(`insert into app_members(user_id,role) values($1,$2)`,['neon-user-123','admin']);
   await assert.rejects(()=>db.query(`insert into app_members(user_id,role) values($1,$2)`,['bad-user','superadmin']));
@@ -23,6 +23,10 @@ test('schema e seed Neon: carga idempotente, e-mails preservados e constraints a
   await db.query(`update people set blocked=false where role='Superintendente'`);
   await db.exec(await readFile(new URL('../neon/003_block_superintendents.sql',import.meta.url),'utf8'));
   assert.equal((await db.query(`select id from people where role='Superintendente' and blocked`)).rows.length,6);
+  await db.query(`update people set blocked=false where role='Secretária executiva'`);
+  const secretaryMigration=await readFile(new URL('../neon/005_block_executive_secretary.sql',import.meta.url),'utf8');
+  await db.exec(secretaryMigration);await db.exec(secretaryMigration);
+  assert.equal((await db.query(`select id from people where role='Secretária executiva' and blocked`)).rows.length,1);
   const preserved=await db.query<{email:string}>(`select email from people where id=$1`,[rows[0].id]);
   assert.equal(preserved.rows[0].email,'contato@example.com');
   assert.equal((await db.query(`select id from people`)).rows.length,112);

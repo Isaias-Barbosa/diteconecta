@@ -10,7 +10,7 @@ test('política normaliza bancos antigos sem alterar e-mail, nome ou função',(
 });
 test('seis superintendentes ficam somente para consulta, sem bloquear integrantes',()=>{
  const result=seed.map(applyContactPolicy);
- assert.equal(result.filter(p=>p.blocked).length,29);
+ assert.equal(result.filter(p=>p.blocked).length,30);
  assert.ok(result.filter(isSuperintendent).every(p=>p.blocked));
  assert.ok(result.filter(p=>p.role==='Integrante').every(p=>!p.blocked));
 });
