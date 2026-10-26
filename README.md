@@ -7,7 +7,7 @@ Diretório corporativo em **Next.js + TypeScript**, com **PostgreSQL e Neon Auth
 - 112 pessoas do PDF atualizado em 03/06/2026, em 25 agrupamentos.
 - 29 contatos somente para consulta: os 23 nomes em vermelho do PDF e os 6 superintendentes. Gerentes e diretoria aparecem em vermelho; superintendentes, em azul.
 - Busca por nome, área e e-mail; filtros por área e contatos habilitados.
-- Página `/admin` com todos os contatos para cadastrar, corrigir ou apagar o e-mail/UPN do Teams.
+- Página `/admin` com coluna Opções, edição do e-mail e da situação em modal e exclusão com confirmação.
 - Modal para digitar, copiar o texto e abrir a conversa privada no Teams.
 - Login por e-mail/senha com Neon Auth; permissões `admin` e `reader` no banco.
 - Bloqueios e permissões verificados no servidor. Nenhum cadastro público ou promoção de função pela interface.
@@ -78,7 +78,7 @@ Não existem 112 contas de login: as pessoas do PDF são contatos na tabela `peo
 npm run dev
 ```
 
-Abra http://localhost:3000/login, entre e acesse **Administração**. Preencha o e-mail/UPN de cada pessoa e clique em **Salvar** na respectiva linha. Contatos em vermelho permanecem bloqueados mesmo com e-mail.
+Abra http://localhost:3000/login, entre e acesse **Administração**. Clique em **Opções → Editar**, preencha o e-mail/UPN e clique em **Salvar alterações** no modal. Contatos em vermelho permanecem bloqueados mesmo com e-mail.
 
 ### Confirmar o e-mail da conta criada pelo terminal
 
@@ -119,8 +119,8 @@ A aplicação utiliza as funções do próprio Next.js na Vercel. A consulta ao 
 - Login e sessão usam o SDK oficial do Neon Auth e cookies gerenciados pelo servidor.
 - A aplicação expõe somente os endpoints de login, sessão, logout, confirmação de e-mail por código e recuperação de senha com token do Auth. Cadastro e gerenciamento de funções não são expostos pelo proxy do site.
 - Cada chamada de dados verifica a sessão e consulta `app_members`. Revogar a associação corta o acesso aos dados, mesmo com uma sessão ainda válida.
-- O servidor permite alteração somente do campo `email`, com uma consulta parametrizada que também verifica a função `admin` no banco.
-- `reader` não pode editar e-mails. Campos de nome, função e bloqueio não são recebidos como alterações.
+- O servidor permite alterar somente e-mail, identificação do usuário e ausência/retorno, com consulta parametrizada que também verifica a função `admin` no banco. A exclusão é lógica e também exige administrador.
+- `reader` não pode editar nem excluir contatos. Campos de nome, função e bloqueio não são recebidos como alterações.
 - A connection string fica apenas no servidor. Não habilite acesso público às tabelas via Data API. As consultas usam a conta de banco da `DATABASE_URL`; a autorização desta arquitetura acontece nas rotas e nas condições SQL, não nas antigas políticas RLS do Supabase.
 - As tabelas têm permissões públicas revogadas pelo schema. A conexão do servidor deve usar a conta proprietária que executou os scripts, ou uma conta com permissões equivalentes explicitamente configuradas.
 - Erros técnicos do banco não são devolvidos aos clientes.
@@ -185,6 +185,7 @@ npm test
 npm run typecheck
 npm run build
 npm run test:smoke
+npm run test:contacts
 ```
 
 A conexão real ao banco, o provisionamento de contas e a conversa no Teams devem ser conferidos depois de configurar sua conta Neon. Não foram usados dados de acesso à sua conta durante a migração do código.
@@ -209,3 +210,26 @@ Documentação oficial: https://neon.com/docs/auth/quick-start/nextjs-api-only e
 Os seis superintendentes aparecem em azul e não podem preparar mensagens, mesmo com e-mail cadastrado. O servidor e a interface aplicam a regra pela função `Superintendente`, incluindo bancos antigos que ainda tenham `blocked=false`. O bloqueio entra em vigor após o deploy, sem necessidade de recadastrar contatos.
 
 Opcionalmente, execute `neon/003_block_superintendents.sql` no banco existente para persistir o bloqueio na coluna `blocked`. O script preserva e-mails. Em bancos novos, o seed já inclui os seis superintendentes bloqueados.
+
+
+## Atualização do admin: situações e exclusão
+
+**Banco existente: execute `neon/004_contact_status.sql` no SQL Editor do Neon.** O script adiciona as colunas de situação, retorno e exclusão, preservando os e-mails e os bloqueios já existentes. Reexecutá-lo é seguro. A lista continua legível no banco antigo; salvar situações e excluir exige essa migração. Em bancos novos, `001_schema.sql` já inclui as colunas.
+
+Em Administração, a coluna **Opções** contém **Editar** e **Excluir**. A edição abre um modal com:
+
+- E-mail do Teams.
+- Caixinha **Usuário desconhecido**.
+- Caixinha **Usuário não encontrado**. As duas situações de identificação são alternativas: selecionar uma desmarca a outra.
+- Dropdown **Usuário ausente?**, com **Não está ausente**, **Ausência temporária** e **Férias**.
+- Data de retorno obrigatória ao selecionar ausência ou férias.
+
+Na página inicial, as situações de identificação aparecem sob o nome, em âmbar (desconhecido) ou vermelho (não encontrado). Ausência/férias aparecem com bolinha roxa, descrição e data de retorno. O indicador de ausência desaparece na data de retorno, considerando o horário de Brasília, sem exigir uma tarefa agendada. Essas situações são informativas; não alteram as regras de envio dos cargos. Gerentes e superintendentes continuam bloqueados.
+
+**Excluir** pede confirmação e remove o contato do diretório, das buscas e da administração. A conta de login não é alterada. Os dados são preservados com `deleted_at` para recuperação administrativa; o seed não reativa contatos excluídos. O e-mail pode ser reutilizado por outro contato ativo. Para restaurar pelo SQL Editor, primeiro confira se o e-mail não foi reutilizado e execute:
+
+```sql
+update public.people set deleted_at=null where id='ID_DO_CONTATO';
+```
+
+Os testes de contatos utilizam somente a demonstração local em memória, sem alterar o banco real ou enviar mensagens no Teams.

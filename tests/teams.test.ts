@@ -27,3 +27,5 @@ test('superintendente é bloqueado mesmo se o banco antigo indicar blocked=false
  const superintendent=seed.find(p=>p.role==='Superintendente')!;
  assert.throws(()=>teamsLink({...superintendent,blocked:false,email:'superintendente@example.com'},'Olá'),/bloqueado/);
 });
+
+test('contato excluído não gera conversa',()=>{assert.throws(()=>teamsLink({...person,deleted_at:new Date().toISOString()},'Olá'),/excluído/);});

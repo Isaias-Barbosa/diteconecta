@@ -7,9 +7,9 @@ export async function POST(request:Request){try{
  let body;try{body=await request.json();}catch{throw new AccessError('Dados inválidos.',400);}
  if(!body || typeof body.id!=='string'||typeof body.message!=='string')throw new AccessError('Informe contato e mensagem.',400);
  let person:Person|undefined;
- if(demo)person=demoPeople().find(p=>p.id===body.id);
+ if(demo)person=demoPeople().find(p=>p.id===body.id&&!p.deleted_at);
  else {
-  const rows=await session!.sql`select p.* from public.people p where p.id::text=${body.id} and exists(select 1 from public.app_members where user_id=${session!.userId})`;
+  const rows=await session!.sql`select p.* from public.people p where p.id::text=${body.id} and coalesce(to_jsonb(p)->>'deleted_at','')='' and exists(select 1 from public.app_members where user_id=${session!.userId})`;
   person=rows[0] as Person|undefined;
  }
  if(!person)throw new AccessError('Contato não encontrado.',404);
